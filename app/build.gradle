@@ -39,8 +39,12 @@ dependencies {
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
+    //glide
     implementation 'com.github.bumptech.glide:glide:4.9.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
+
+    //crop functionality
+    implementation 'com.theartofdev.edmodo:android-image-cropper:2.8.0'
 
     //cardview
     implementation 'androidx.cardview:cardview:1.0.0'

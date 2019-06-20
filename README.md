@@ -6,10 +6,14 @@ GalleryApp
 
 **Features**
 - Gallery application
+- Uses Firebase to store images, create Firebase project with the same application id and add the google-services.json file in the project to run the app
 
 **Open source libaries used**
-- **[Picasso](https://github.com/square/picasso)**
+- **[Glide](https://github.com/bumptech/glide)**
+- **[Timber](https://github.com/JakeWharton/timber)**
 - **[ButterKnife](https://github.com/JakeWharton/butterknife)**
+- **[Zoomage](https://github.com/jsibbold/zoomage)**
+- **[Android image cropper](https://github.com/ArthurHub/Android-Image-Cropper)**
 
 ### License
 

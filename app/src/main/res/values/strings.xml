@@ -2,7 +2,17 @@
     <string name="app_name">GalleryApp</string>
     <string name="image">Image</string>
     <string name="camera">Camera</string>
+    <string name="upload">Upload</string>
+    <string name="crop">Crop/Rotate</string>
+    <string name="rotate">Rotate</string>
     <string name="title">Title</string>
     <string name="single_image_view">single image view</string>
     <string name="image_name">Name</string>
+    <string name="uploading">Uploading...</string>
+    <string name="uploading_finished">Upload finished!</string>
+    <string name="failed">Failed!</string>
+    <string name="uploaded">Uploaded </string>
+    <string name="firebase_folder">images/ </string>
+    <string name="downloading">Downloading.../ </string>
+    <string name="downloaded">Downloaded.. </string>
 </resources>

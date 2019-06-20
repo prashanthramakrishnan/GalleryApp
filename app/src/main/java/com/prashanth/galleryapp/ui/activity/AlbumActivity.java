@@ -2,16 +2,12 @@ package com.prashanth.galleryapp.ui.activity;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.MergeCursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.DisplayMetrics;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -91,13 +87,13 @@ public class AlbumActivity extends AppCompatActivity {
             String album;
             String timestamp;
 
-            Uri Ext = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-            Uri Int = MediaStore.Images.Media.INTERNAL_CONTENT_URI;
+            Uri external = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+            Uri internal = MediaStore.Images.Media.INTERNAL_CONTENT_URI;
 
             String[] images = {MediaStore.MediaColumns.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.MediaColumns.DATE_MODIFIED};
 
-            Cursor cursorExternal = getContentResolver().query(Ext, images, "bucket_display_name =\"" + albumName + "\"", null, null);
-            Cursor cursorInternal = getContentResolver().query(Int, images, "bucket_display_name =\"" + albumName + "\"", null, null);
+            Cursor cursorExternal = getContentResolver().query(external, images, "bucket_display_name =\"" + albumName + "\"", null, null);
+            Cursor cursorInternal = getContentResolver().query(internal, images, "bucket_display_name =\"" + albumName + "\"", null, null);
 
             Cursor cursor = new MergeCursor(new Cursor[]{cursorExternal, cursorInternal});
             while (cursor.moveToNext()) {
@@ -129,7 +125,6 @@ public class AlbumActivity extends AppCompatActivity {
                 intent.putExtra(Utility.IMAGE_LIST, imageList);
                 intent.putExtra(Utility.IMAGE_POSITION, position);
                 startActivity(intent);
-                // finish();
             });
         }
     }
