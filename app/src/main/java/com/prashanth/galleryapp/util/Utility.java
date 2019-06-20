@@ -25,6 +25,16 @@ public class Utility {
 
     public static final String COUNT_KEY = "COUNT";
 
+    public static final String ALBUM_NAME = "ALBUM_NAME";
+
+    public static final String IMAGE_PATH = "IMAGE_PATH";
+
+    public static final String IMAGE_NAME = "IMAGE_NAME";
+
+    public static final String IMAGE_LIST = "IMAGE_LIST";
+
+    public static final String IMAGE_POSITION = "IMAGE_POSITION";
+
     public static float convertDptoPixels(float dp, Context context) {
         return dp * (context.getResources().getDisplayMetrics().densityDpi / 160f);
     }

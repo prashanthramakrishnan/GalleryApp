@@ -15,7 +15,7 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/AppTheme" tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".MainActivity">
+        <activity android:name=".ui.activity.MainActivity" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -30,6 +30,8 @@
                 <data android:mimeType="vnd.android.cursor.dir/image" />
             </intent-filter>
         </activity>
+        <activity android:name=".ui.activity.AlbumActivity" android:screenOrientation="portrait" android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".ui.activity.ViewImageActivity" android:screenOrientation="portrait" android:theme="@style/AppTheme.NoActionBar" />
 
         <provider
                 android:name="androidx.core.content.FileProvider"
