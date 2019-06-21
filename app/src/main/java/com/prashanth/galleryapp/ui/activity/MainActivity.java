@@ -6,8 +6,10 @@ import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.database.MergeCursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -31,13 +33,15 @@ import com.prashanth.galleryapp.ui.adapter.GalleryAdapter;
 import com.prashanth.galleryapp.util.GalleryComparator;
 import com.prashanth.galleryapp.util.Utility;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import timber.log.Timber;
 
@@ -51,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
     private String imageFilePath;
 
     private static final int REQUEST_CAPTURE_IMAGE = 200;
+
+    private final int REQUEST_PICK_IMAGE = 300;
 
     GalleryAdapter adapter;
 
@@ -78,8 +84,6 @@ public class MainActivity extends AppCompatActivity {
         storageReference = firebaseStorage.getReference();
 
         if (hasExternalStoragePermission()) {
-            albumList.clear();
-
             File folder = new File(Environment.getExternalStorageDirectory() +
                     File.separator + getResources().getString(R.string.app_name));
 
@@ -99,6 +103,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (hasExternalStoragePermission()) {
+            if (!galleryAppSharedPref.getAssetCopied()) {
+                copyAssets();
+            }
             downloadImagesFromFirebase();
         }
     }
@@ -116,10 +123,20 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_camera:
                 checkCameraPermissionAndOpenCamera();
                 return true;
+            case R.id.action_gallery:
+                chooseImage();
+                return true;
 
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void chooseImage() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, getString(R.string.choose_picture)), REQUEST_PICK_IMAGE);
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -167,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
         String imageFileName = "IMG_" + timeStamp + "_";
         File storageDir = new File(Environment.getExternalStorageDirectory() +
                 File.separator + getResources().getString(R.string.app_name));
-        File image = File.createTempFile(imageFileName, ".jpg", storageDir);
+        File image = File.createTempFile(imageFileName, getResources().getString(R.string.image_extension), storageDir);
         imageFilePath = image.getAbsolutePath();
         return image;
     }
@@ -181,15 +198,27 @@ public class MainActivity extends AppCompatActivity {
                 addPhotoToGallery();
             }
         }
+
+        if (requestCode == REQUEST_PICK_IMAGE && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            try {
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), data.getData());
+                File storageDir = new File(Environment.getExternalStorageDirectory() +
+                        File.separator + getResources().getString(R.string.app_name));
+                File storeFile = File.createTempFile(getResources().getString(R.string.from_gallery) + new SimpleDateFormat("yyyyMMdd_HHmmss",
+                        Locale.getDefault()).format(new Date()), getResources().getString(R.string.image_extension), storageDir);
+                FileOutputStream fileOutputStream = new FileOutputStream(storeFile);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+                Utility.sendBroadcast(this, storeFile);
+                new LoadImagesFromStorage().execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void addPhotoToGallery() {
         try {
-            Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-            File f = new File(imageFilePath);
-            Uri contentUri = Uri.fromFile(f);
-            mediaScanIntent.setData(contentUri);
-            this.sendBroadcast(mediaScanIntent);
+            Utility.sendBroadcast(this, new File(imageFilePath));
             downloadImagesFromFirebase();
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -200,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             File file = new File(imageFilePath);
             boolean deleted = file.delete();
+            Timber.d("File deleted because action was canceled %s", deleted);
         } catch (Exception e) {
             Timber.e(e, "Exception deleting file");
         }
@@ -213,8 +243,6 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Timber.d("write storage permission granted");
 
-                albumList.clear();
-
                 File folder = new File(Environment.getExternalStorageDirectory() +
                         File.separator + getResources().getString(R.string.app_name));
 
@@ -224,6 +252,10 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         Timber.d("Directory creation failed");
                     }
+                }
+
+                if (!galleryAppSharedPref.getAssetCopied()) {
+                    copyAssets();
                 }
 
                 downloadImagesFromFirebase();
@@ -259,7 +291,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(String... strings) {
-            albumList.clear();
             String path;
             String album;
             String timestamp;
@@ -292,7 +323,7 @@ public class MainActivity extends AppCompatActivity {
             }
             cursor.close();
 
-            Collections.sort(albumList, new GalleryComparator(Utility.TIMESTAMP_KEY, "dsc"));
+            Collections.sort(albumList, new GalleryComparator(Utility.TIMESTAMP_KEY, getResources().getString(R.string.descending)));
 
             return null;
         }
@@ -314,66 +345,87 @@ public class MainActivity extends AppCompatActivity {
 
     private void downloadImagesFromFirebase() {
         final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setTitle(getString(R.string.downloading));
-        progressDialog.show();
-        List<GalleryAppSharedPref.ImageInfo> imageInfos = galleryAppSharedPref.getImageInfoList();
         if (galleryAppSharedPref.getImageInfoList() != null && !galleryAppSharedPref.getImageInfoList().isEmpty()) {
-            GalleryAppSharedPref.ImageInfo imageInfo = galleryAppSharedPref.getImageInfoList().get(0);
-            File storageDir = new File(Environment.getExternalStorageDirectory() +
-                    File.separator + getResources().getString(R.string.app_name));
-            try {
-                File checkFile = File.createTempFile(imageInfo.imageName, ".jpg", storageDir);
+            progressDialog.setTitle(getString(R.string.downloading));
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+            for (GalleryAppSharedPref.ImageInfo imageInfo : galleryAppSharedPref.getImageInfoList()) {
+                File storageDir = new File(Environment.getExternalStorageDirectory() +
+                        File.separator + getResources().getString(R.string.app_name));
+                File checkFile = new File(storageDir, imageInfo.imageName);
                 if (checkFile.exists()) {
                     Timber.d("File already exists, don't download");
-                    progressDialog.dismiss();
                     new LoadImagesFromStorage().execute();
+                    progressDialog.dismiss();
                 } else {
-                    Timber.d("File doesn't exist downloading it");
+                    Timber.d("File doesn't exist downloading..");
                     StorageReference imageToDownload = storageReference.child(getString(R.string.firebase_folder) + imageInfo.imageName);
-                    try {
-                        File localFile =
-                                File.createTempFile(imageInfo.imageName, ".jpg",
-                                        new File(Environment.getExternalStorageDirectory() + File.separator + getResources().getString(R.string.app_name)));
-                        imageToDownload.getFile(localFile)
-                                .addOnSuccessListener(taskSnapshot -> {
-                                    Timber.d("Image successfully downloaded");
-                                    Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                                    Uri contentUri = Uri.fromFile(localFile);
-                                    mediaScanIntent.setData(contentUri);
-                                    this.sendBroadcast(mediaScanIntent);
+                    File localFile = new File(storageDir, imageInfo.imageName);
+                    imageToDownload.getFile(localFile)
+                            .addOnSuccessListener(taskSnapshot -> {
+                                Timber.d("Image successfully downloaded");
+                                runOnUiThread(() -> {
+                                    Utility.sendBroadcast(MainActivity.this, localFile);
                                     new LoadImagesFromStorage().execute();
                                     progressDialog.dismiss();
-                                }).addOnFailureListener(e -> {
-                            Timber.e(e, "Failed to download the image");
-                            new LoadImagesFromStorage().execute();
-                            progressDialog.dismiss();
-                        }).addOnProgressListener(taskSnapshot -> {
-                            double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot
-                                    .getTotalByteCount());
-                            progressDialog.setMessage(getResources().getString(R.string.downloaded) + (int) progress + "%");
-                            new LoadImagesFromStorage().execute();
-                        }).addOnFailureListener(e -> {
-                            Timber.e(e, "Can't download file from Firebase");
-                            new LoadImagesFromStorage().execute();
-                            progressDialog.dismiss();
-                        });
-                    } catch (IOException e) {
+                                });
+                            }).addOnFailureListener(e -> {
+                        Timber.e(e, "Failed to download the image");
+                    }).addOnProgressListener(taskSnapshot -> {
+                        double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot
+                                .getTotalByteCount());
+                        progressDialog
+                                .setMessage(getResources().getString(R.string.downloaded) + (int) progress + getResources().getString(R.string.percentage));
+                        new LoadImagesFromStorage().execute();
+                    }).addOnFailureListener(e -> {
+                        Timber.e(e, "Can't download file from Firebase");
                         progressDialog.dismiss();
                         new LoadImagesFromStorage().execute();
-                        Timber.e("Couldn't create file to download");
-                    }
-
+                    });
                 }
-            } catch (IOException e) {
-                Timber.e(e, "Exception checking file");
-                new LoadImagesFromStorage().execute();
-                progressDialog.dismiss();
             }
-
         } else {
             new LoadImagesFromStorage().execute();
             progressDialog.dismiss();
         }
 
+    }
+
+    private void copyAssets() {
+        AssetManager assetManager = getAssets();
+        String[] files = null;
+        try {
+            files = assetManager.list("");
+        } catch (IOException e) {
+            Timber.e(e, "Failed to get assets");
+        }
+        if (files != null) {
+            for (String filename : files) {
+                InputStream in = null;
+                OutputStream out = null;
+                try {
+                    in = assetManager.open(filename);
+                    File outFile = File.createTempFile(filename, getResources().getString(R.string.image_extension),
+                            new File(Environment.getExternalStorageDirectory() + File.separator + getResources().getString(R.string.app_name)));
+                    out = new FileOutputStream(outFile);
+                    copyFile(in, out);
+                    in.close();
+                    out.flush();
+                    out.close();
+                    galleryAppSharedPref.setAssetCopied(true);
+                    Utility.sendBroadcast(this, outFile);
+                } catch (IOException e) {
+                    Timber.e("Failed to get asset file");
+                }
+            }
+        }
+    }
+
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
+        }
     }
 }

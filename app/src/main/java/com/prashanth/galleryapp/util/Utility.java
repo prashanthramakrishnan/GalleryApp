@@ -2,16 +2,17 @@ package com.prashanth.galleryapp.util;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.Resources;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.MergeCursor;
 import android.net.Uri;
 import android.provider.MediaStore;
-import android.util.DisplayMetrics;
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import timber.log.Timber;
 
 public class Utility {
 
@@ -51,8 +52,7 @@ public class Utility {
     }
 
     public static HashMap<String, String> mapDetails(String album, String path, String timestamp, String time, String count) {
-
-        HashMap<String, String> map = new HashMap<String, String>();
+        HashMap<String, String> map = new HashMap<>();
         map.put(ALBUM_KEY, album);
         map.put(PATH_KEY, path);
         map.put(TIMESTAMP_KEY, timestamp);
@@ -67,6 +67,14 @@ public class Utility {
         Date date = new Date(datetime);
         DateFormat format = new SimpleDateFormat("dd/MM HH:mm");
         return format.format(date);
+    }
+
+    public static void sendBroadcast(Context context, File file) {
+        Timber.d("Sending broadcast intent");
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        Uri contentUri = Uri.fromFile(file);
+        mediaScanIntent.setData(contentUri);
+        context.sendBroadcast(mediaScanIntent);
     }
 
 }

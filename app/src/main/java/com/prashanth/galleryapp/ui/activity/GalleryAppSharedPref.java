@@ -22,6 +22,8 @@ public class GalleryAppSharedPref {
 
     private static final String IMAGE_LIST_KEY = "image_list_key";
 
+    private static final String COPY_ASSET_KEY = "copy_asset_key";
+
     private SharedPreferences sharedPreferences;
 
     public GalleryAppSharedPref(Context context) {
@@ -34,6 +36,14 @@ public class GalleryAppSharedPref {
 
     public String getFirebaseImageUrl() {
         return sharedPreferences.getString(IMAGE_URL_KEY, null);
+    }
+
+    public void setAssetCopied(boolean set) {
+        sharedPreferences.edit().putBoolean(COPY_ASSET_KEY, set).apply();
+    }
+
+    public boolean getAssetCopied() {
+        return sharedPreferences.getBoolean(COPY_ASSET_KEY, false);
     }
 
     public void addImageInfo(String imageName, String imageUrl) {
@@ -57,5 +67,4 @@ public class GalleryAppSharedPref {
 
         return imageInfos;
     }
-
 }

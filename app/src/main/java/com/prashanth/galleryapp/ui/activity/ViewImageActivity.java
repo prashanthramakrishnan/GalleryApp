@@ -104,6 +104,7 @@ public class ViewImageActivity extends AppCompatActivity {
             final ProgressDialog progressDialog = new ProgressDialog(this);
             progressDialog.setTitle(getResources().getString(R.string.uploading));
             progressDialog.show();
+            progressDialog.setCancelable(false);
 
             Uri file = Uri.fromFile(filePath);
             StorageReference reference = storageReference.child(getString(R.string.firebase_folder) + file.getLastPathSegment());
@@ -125,7 +126,8 @@ public class ViewImageActivity extends AppCompatActivity {
                     .addOnProgressListener(taskSnapshot -> {
                         double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot
                                 .getTotalByteCount());
-                        progressDialog.setMessage(getResources().getString(R.string.uploaded) + (int) progress + "%");
+                        progressDialog
+                                .setMessage(getResources().getString(R.string.uploaded) + " " + (int) progress + getResources().getString(R.string.percentage));
                     });
         }
     }
@@ -140,7 +142,8 @@ public class ViewImageActivity extends AppCompatActivity {
         File localFile =
                 null;
         try {
-            localFile = File.createTempFile("EDITED_" + filePathString.substring(filePathString.lastIndexOf("/") + 1), ".jpg",
+            localFile = File.createTempFile("EDITED_" + filePathString.substring(filePathString.lastIndexOf("/") + 1),
+                    getResources().getString(R.string.image_extension),
                     new File(Environment.getExternalStorageDirectory() + File.separator + getResources().getString(R.string.app_name)));
         } catch (IOException e) {
             Timber.e(e, "Exception creating file");
@@ -151,7 +154,7 @@ public class ViewImageActivity extends AppCompatActivity {
 
         try {
             bis = new BufferedInputStream(new FileInputStream(sourceFilename));
-            bos = new BufferedOutputStream(new FileOutputStream(localFile.getAbsoluteFile(), false));
+            bos = new BufferedOutputStream(new FileOutputStream(localFile, false));
             byte[] buf = new byte[1024];
             bis.read(buf);
             do {
@@ -168,12 +171,9 @@ public class ViewImageActivity extends AppCompatActivity {
                     bos.close();
                 }
             } catch (IOException e) {
-                Timber.e("Exception writing file");
+                Timber.e(e,"Exception writing file");
             }
         }
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        Uri contentUri = Uri.fromFile(localFile);
-        mediaScanIntent.setData(contentUri);
-        this.sendBroadcast(mediaScanIntent);
+        Utility.sendBroadcast(this, localFile);
     }
 }

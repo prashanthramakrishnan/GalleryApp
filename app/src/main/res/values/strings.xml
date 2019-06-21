@@ -8,11 +8,17 @@
     <string name="title">Title</string>
     <string name="single_image_view">single image view</string>
     <string name="image_name">Name</string>
-    <string name="uploading">Uploading...</string>
+    <string name="uploading">Uploading…</string>
     <string name="uploading_finished">Upload finished!</string>
     <string name="failed">Failed!</string>
-    <string name="uploaded">Uploaded </string>
+    <string name="uploaded">Uploaded</string>
     <string name="firebase_folder">images/ </string>
-    <string name="downloading">Downloading.../ </string>
-    <string name="downloaded">Downloaded.. </string>
+    <string name="downloading">Downloading…</string>
+    <string name="downloaded">Downloaded…</string>
+    <string name="image_extension">.jpg</string>
+    <string name="percentage">%</string>
+    <string name="descending">dsc</string>
+    <string name="gallery">Gallery</string>
+    <string name="choose_picture">Choose picture</string>
+    <string name="from_gallery">FROMGALLERY</string>
 </resources>

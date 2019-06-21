@@ -17,12 +17,12 @@ public class GalleryComparator implements Comparator<HashMap<String, String>> {
     @Override
     public int compare(HashMap<String, String> first, HashMap<String, String> second) {
         String firstValue = first.get(key);
-        String seccondValue = second.get(key);
+        String secondValue = second.get(key);
 
         if (this.order.toLowerCase().contentEquals("asc")) {
-            return firstValue.compareTo(seccondValue);
+            return firstValue.compareTo(secondValue);
         } else {
-            return seccondValue.compareTo(firstValue);
+            return secondValue.compareTo(firstValue);
         }
     }
 }

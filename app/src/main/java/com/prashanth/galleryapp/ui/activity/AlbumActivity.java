@@ -109,7 +109,7 @@ public class AlbumActivity extends AppCompatActivity {
             }
             cursor.close();
 
-            Collections.sort(imageList, new GalleryComparator(Utility.TIMESTAMP_KEY, "dsc"));
+            Collections.sort(imageList, new GalleryComparator(Utility.TIMESTAMP_KEY, getResources().getString(R.string.descending)));
             return null;
         }
 
