@@ -27,6 +27,8 @@ Note: For some reason, when a new file is added to the folder; even though the m
 the application needs to be put to the background and got up again. I'm figuring out why this is happening, suspicion is that the async task which fetches the
 images through a query is may be running in a different thread. This will go in as my first bug into this project.
 
+![Demo](demo/galleryapp.gif)
+
 **TODO**
 - Instrumentation and unit testing
 
